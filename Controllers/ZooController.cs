@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using RestAPI.Repository;
 using System.Collections.Generic;
 
 namespace RestAPI.Controllers
@@ -7,77 +8,68 @@ namespace RestAPI.Controllers
     [Route("[controller]/[action]")]
     public class ZooController : ControllerBase
     {
+        private readonly List<AnimalModel> animalModels = new List<AnimalModel>();
+        private readonly ZooRepository _zooRepository = new ZooRepository();
+
         public ZooController()
         {
+            animalModels.AddRange(_zooRepository.Populate());
         }
 
-        [HttpGet]
-        public AnimalModel Get()
+        [HttpGet("{Id}")]
+        public AnimalModel Get([FromQuery] int Id)
         {
-            AnimalModel animal = new AnimalModel()
-            {
-                Id = 1,
-                Name = "Leão",
-                Species = "Panthera leo",
-                Qtd = 1
-            };
-
-            return animal;
+            return animalModels.Find(e => e.Id == Id);
         }
 
         [HttpGet]
         public List<AnimalModel> GetList()
         {
-            return new List<AnimalModel>
-            {
-                new AnimalModel(){ Id = 1, Name = "Leão", Species = "Panthera leo", Qtd = 1},
-                new AnimalModel(){ Id = 2, Name = "Raposa", Species = "Raposa-vermelha", Qtd = 1}
-            };
+            return animalModels;
         }
 
         [HttpPost]
         public IActionResult Post([FromBody] AnimalModel animal)
         {
-            var animalPost = new AnimalModel()
-            {
-                Id = animal.Id,
-                Name = animal.Name,
-                Species = animal.Species,
-                Qtd = animal.Qtd
-            };
+            animalModels.Add(new AnimalModel(animal.Id, animal.Qtd, animal.Species, animal.Name));
 
-            return Ok(animalPost);
+            return Created("", new ObjectResult(animalModels));
         }
 
         [HttpPut]
         public IActionResult Put([FromBody] AnimalModel animal)
         {
-            var animalPost = new AnimalModel()
-            {
-                Id = animal.Id,
-                Name = animal.Name,
-                Species = animal.Species,
-                Qtd = animal.Qtd
-            };
+            var item = animalModels.Find(e => e.Id == animal.Id);
+            animalModels.Remove(item);
 
-            return Ok(animalPost);
+            item.Name = animal.Name;
+            item.Qtd = animal.Qtd;
+            item.Species = animal.Species;
+
+            animalModels.Add(item);
+
+            return Ok(animal);
         }
 
         [HttpPatch]
         public IActionResult Patch([FromBody] AnimalModel animal)
         {
-            var animalPost = new AnimalModel()
-            {
-                Name = animal.Name,
-            };
+            var item = animalModels.Find(e => e.Id == animal.Id);
+            animalModels.Remove(item);
 
-            return Ok(animalPost);
+            item.Name = animal.Name;
+            item.Qtd = animal.Qtd;
+            item.Species = animal.Species;
+
+            animalModels.Add(item);
+
+            return Ok(animal);
         }
 
-        [HttpDelete]
-        public IActionResult Delete(int id)
+        [HttpDelete("{Id}")]
+        public IActionResult Delete([FromQuery] int Id)
         {
-            return Ok();
+            return Ok(animalModels.Remove(animalModels.Find(e => e.Id == Id)));
         }
     }
 }
